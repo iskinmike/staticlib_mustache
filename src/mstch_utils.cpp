@@ -20,6 +20,7 @@
  * 
  * Created on October 28, 2016, 8:52 PM
  */
+#include <unordered_map>
 
 #include "mstch_utils.hpp"
 
@@ -32,6 +33,8 @@ namespace mustache {
 namespace utils {
 
 namespace { // anonymous
+
+static std::unordered_map<std::string, std::string> file_cache;
 
 mstch::node create_map(const sl::json::value& value) {
     std::map<const std::string, mstch::node> map;
@@ -66,10 +69,18 @@ mstch::node create_mstch_node(const sl::json::value& value) {
 }
 
 std::string read_file_to_string(const std::string& path) {
-    auto fd = sl::tinydir::file_source(path);
-    sl::io::string_sink sink{};
-    sl::io::copy_all(fd, sink);
-    return std::move(sink.get_string());
+    std::string res{};
+    if (file_cache.count(path)) {
+        res = file_cache[path];
+    } else {
+        auto fd = sl::tinydir::file_source(path);
+        sl::io::string_sink sink{};
+        sl::io::copy_all(fd, sink);
+        res = std::move(sink.get_string());
+        file_cache[path] = res;
+    }
+
+    return res;
 }    
 
 } // namespace
